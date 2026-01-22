@@ -17,13 +17,9 @@ class PaypalServiceProvider extends ServiceProvider implements DeferrableProvide
     {
         $this->app->singleton(PayPalClient::class, function ($app) {
 
-# PAYPAL API CREDENTIALS
-            $client_id = "AZI-gkNUoN-vcY7WK80Qo-wijfqi9BOdpghemgBNAy50qSMEFywGg8FA7p5L6CmAFI4BMepe4-EDWDB-";
-            $secret = "EGQh64GnPeOrmKo191m4WMtLAruCRETNCLha98ol15gpLIlng61yIRxoxsLh08luumMud1WWWlL9n6bP";
-            $mode = 'sandbox';
-            $paypal_client_id = $client_id;
-            $paypal_secret = $secret;
-            $paypal_mode = $mode;
+            $paypal_client_id = env('PAYPAL_CLIENT_ID');
+            $paypal_secret = env('PAYPAL_SECRET');
+            $paypal_mode = env('PAYPAL_MODE');
             if ('sandbox' == $paypal_mode) {
                 $environment = new SandboxEnvironment($paypal_client_id, $paypal_secret);
             } else {
