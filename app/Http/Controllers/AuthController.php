@@ -41,18 +41,29 @@ class AuthController extends Controller
         $credentials = $request->only('email', 'password');
 
         try {
-            if (!$token = JWTAuth::attempt($credentials)) {
+            if (!$token = auth('api')->attempt($credentials)) {
                 return response()->json(['error' => 'Invalid credentials'], 401);
             }
         } catch (JWTException $e) {
             return response()->json(['error' => 'Could not create token'], 500);
         }
 
+        // Set cookie with proper settings for localhost
         return response()->json([
-             'access_token' => $token,
+            'access_token' => $token,
             'token_type' => 'bearer',
-            'expires_in' => auth()->factory()->getTTL() * 60,
-        ]);
+            'expires_in' => auth('api')->factory()->getTTL() * 60,
+        ])->cookie(
+            'access_token',
+            $token,
+            60 * 24 * 15,              // 15 days in minutes
+            '/',
+            'localhost',               // Explicitly set domain
+            false,                     // secure = false for http
+            true,                      // httpOnly = true
+            false,                     // raw
+            'Lax'                      // sameSite
+        );
     }
 
     // LOGOUT
@@ -73,7 +84,7 @@ class AuthController extends Controller
 
     public function refresh(): JsonResponse
     {
-        $newToken = JWTAuth::refresh(JWTAuth::getToken());
+        $newToken = auth('api')->refresh();
 
         return response()->json([
             'access_token' => $newToken,
