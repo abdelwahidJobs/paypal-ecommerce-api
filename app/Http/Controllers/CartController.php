@@ -122,8 +122,9 @@ class CartController  extends Controller
     public function updateDeliveryOption(Request $request,Cart $cart, Product $product): AnonymousResourceCollection
     {
         $request->validate([
-            'delivery_option_id' => 'required|string|exists:delivery_options,id',
+            'delivery_option_id' => 'required|int|exists:delivery_options,id',
         ]);
+
 
         $cart->items()->where('product_id', $product->id)
             ->update(['delivery_option_id' => $request->delivery_option_id]);

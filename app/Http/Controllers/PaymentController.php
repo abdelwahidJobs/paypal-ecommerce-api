@@ -27,7 +27,7 @@ class PaymentController extends Controller
     public function createOrder(Request $request): mixed
     {
         $request->validate([
-            'cart_id' => 'required|string|exists:carts,uuid',
+            'cart_id' => 'required|string|exists:carts,id',
         ]);
 
         $cart = Cart::where('id', $request->cart_id)->firstOrFail();
@@ -98,11 +98,14 @@ class PaymentController extends Controller
      */
     public function capture(Request $request, string $id): mixed
     {
-        $request->validate([
-            'order_id' => 'required|string|exists:transactions,order_id',
-        ]);
 
-        $transaction = Transaction::where('order_id', $id)->firstOrFail();
+        $transaction = Transaction::where('order_id', $request->id)->firstOrFail();
+        if(!$transaction)
+        {
+            throw ValidationException::withMessages([
+                'message' => 'Payment could not be captured !',
+            ]);
+        }
         $cart = $transaction->cart;
 
         try {
