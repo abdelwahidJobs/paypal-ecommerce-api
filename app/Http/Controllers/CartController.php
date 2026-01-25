@@ -30,16 +30,15 @@ class CartController  extends Controller
 
     public function currentCart(Request $request): CartResource
     {
-        $cart = Cart::where('status', '!=', 'paid')
-            ->with(['items'])
-            ->first();
+        $cart = Cart::with('items')
+            ->where('status', '!=', 'paid')
+            ->firstOr(function () {
+                return Cart::create([
+                    'user_id' =>  User::first()->id,
+                    'status' => 'draft',
+                ]);
+            });
 
-        if(!$cart){
-            $cart =  Cart::create([
-                'user_id' => User::first()->id,
-                'status' =>  'draft'
-            ])->first();
-        }
         return new CartResource($cart);
     }
 
@@ -55,60 +54,65 @@ class CartController  extends Controller
 
     public function items(Request $request): AnonymousResourceCollection
     {
-        $cart = Cart::where('status', '!=', 'paid')
-            ->first();
 
-        if(!$cart){
-            $cart =  Cart::create([
-                'user_id' => User::first()->id,
-                'status' =>  'draft'
-            ])->first();
-        }
+        $user = User::first(); // Ideally, use $request->user() if authentication is available
 
+        $cart = Cart::with('items.product')
+            ->where('status', '!=', 'paid')
+            ->firstOr(function () use ($user) {
+                return Cart::create([
+                    'user_id' => $user->id,
+                    'status' => 'draft',
+                ]);
+            });
 
-        $items = CartItem::with(['product'])
-            ->where('cart_id', $cart->id)
-            ->get();
-
-        return CartItemResource::collection($items);
+        return CartItemResource::collection($cart->items);
     }
 
     public function addItem(Request $request): AnonymousResourceCollection
     {
         $request->validate([
-            'product_id' => 'required|string', // exists in product_id
-            'quantity' => 'required|int', // exists in product_id
+            'product_id' => 'required|string|exists:products,uuid',
+            'quantity' => 'required|int|min:1',
         ]);
 
-        $cart = Cart::where('status', '!=', 'paid')->first();
+        $user = User::first();
 
-        $item = $cart->items->where('product_id', $request->get('product_id'))
-        ->first();
+        // Get or create the cart
+        $cart = Cart::with('items.product')
+            ->where('status', '!=', 'paid')
+            ->firstOr(function () use ($user) {
+                return Cart::create([
+                    'user_id' => $user->id,
+                    'status' => 'draft',
+                ]);
+            });
 
+        $product = Product::where('uuid', $request->product_id)->firstOrFail();
 
-        if($item)
-        {
-            $item->update(['quantity' => ($item->quantity + $request->get('quantity'))]);
-        }else{
-             $cart->items()->create([
-                 'cart_id' =>  $cart->id,
-                 'product_id' =>  $request->get('product_id'),
+        // Add or increment item quantity
+        $item = $cart->items()->where('product_id', $product->id)->first();
+
+        if ($item) {
+            $item->increment('quantity', $request->quantity);
+        } else {
+            $cart->items()->create([
+                'product_id' => $product->id,
                 'delivery_option_id' => 1,
-                'quantity' => $request->get('quantity')
+                'quantity' => $request->quantity,
             ]);
-
         }
 
+        // Reload items to include the newly added/updated item
+        $cart->load('items.product');
 
         return CartItemResource::collection($cart->items);
     }
 
     public function deleteItem(Request $request,Cart $cart, Product $product): AnonymousResourceCollection
     {
-
         $cart->items()->where('product_id', $product->id)
             ->delete();
-
 
         return CartItemResource::collection($cart->items);
     }
@@ -118,12 +122,11 @@ class CartController  extends Controller
     public function updateDeliveryOption(Request $request,Cart $cart, Product $product): AnonymousResourceCollection
     {
         $request->validate([
-            'delivery_option_id' => 'required'
+            'delivery_option_id' => 'required|string|exists:delivery_options,id',
         ]);
 
         $cart->items()->where('product_id', $product->id)
-            ->update(['delivery_option_id' => $request->get('delivery_option_id')]);
-
+            ->update(['delivery_option_id' => $request->delivery_option_id]);
 
         return CartItemResource::collection($cart->items);
     }

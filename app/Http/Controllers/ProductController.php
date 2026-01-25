@@ -14,6 +14,4 @@ class ProductController extends Controller
         $products = Product::all();
         return ProductResource::collection($products);
     }
-
-
 }

@@ -31,3 +31,8 @@ Route::put('/carts/{cart}/{product}', [CartController::class, 'updateDeliveryOpt
 Route::put('/carts/{cart}/{product}', [CartController::class, 'updateDeliveryOption']);
 Route::delete('/carts/{cart}/{product}', [CartController::class, 'deleteItem']);
 
+
+Route::prefix('/payment')->group(function () {
+    Route::post('/create-order', [PaymentController::class, 'createOrder']);
+    Route::post('/orders/{id}/capture', [PaymentController::class, 'capture']);
+});

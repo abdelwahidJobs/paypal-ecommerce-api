@@ -4,12 +4,16 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\Image\Enums\Fit;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
-class Product extends Model
+
+class Product extends Model implements HasMedia
 {
 
-    public $incrementing = false;
-    protected $keyType = 'string';
+    use InteractsWithMedia;
 
     protected static function booted()
     {
@@ -26,4 +30,13 @@ class Product extends Model
         'count',
         'priceCents',
     ];
+
+    public function registerMediaConversions(?Media $media = null): void
+    {
+        $this
+            ->addMediaConversion('images')
+            ->fit(Fit::Contain, 300, 300)
+            ->nonQueued();
+    }
+
 }

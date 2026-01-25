@@ -12,7 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('products', function (Blueprint $table) {
-            $table->uuid('id')->primary(); // UUID replaces auto-increment ID
+            $table->id();
+            $table->uuid();
             $table->string('name');
             $table->float('stars');
             $table->unsignedInteger('reviews_count');

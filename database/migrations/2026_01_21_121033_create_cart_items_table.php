@@ -17,7 +17,7 @@ return new class extends Migration
             $table->uuid('cart_id');
             $table->foreign('cart_id')->references('id')->on('carts');
 
-            $table->uuid('product_id');
+            $table->unsignedBigInteger('product_id');
             $table->foreign('product_id')->references('id')->on('products');
 
             $table->unsignedBigInteger('delivery_option_id');

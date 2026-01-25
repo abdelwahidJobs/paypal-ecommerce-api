@@ -16,7 +16,7 @@ class DeliveryOptionController extends Controller
      * @param Request $request
      * @return AnonymousResourceCollection
      */
-    public function index(Request $request)
+    public function index(Request $request): AnonymousResourceCollection
     {
         $deliveryOptions = DeliveryOption::all();
         return DeliveryOptionResource::collection($deliveryOptions);
